@@ -3,12 +3,15 @@ import logging
 import json
 import os
 from random import uniform
+from .models import PontoRecarga
+from shared.utils import gera_coordenadas
 
 # Configuração do logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(container_id)s] %(message)s"
 )
+
 
 HOST = "0.0.0.0"
 BASE_PORT = int(os.getenv('BASE_PORT', 6000))

@@ -4,6 +4,8 @@ import logging
 import json
 import os
 from random import uniform
+from shared.utils import calcular_distancia
+
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [NUVEM] %(message)s")
@@ -80,7 +82,8 @@ def handle_client(client_socket, addr):
             elif mensagem["acao"] == "solicitar_reserva":
                 id_ponto = distribuir_clientes(calcular_pontos_proximos(mensagem["localizacao"]))
                 if id_ponto:
-                    ip_ponto = PONTOS_RECARGA[id_ponto]["ip"]
+                    #ip_ponto = PONTOS_RECARGA[id_ponto]["ip"]
+                    ip_ponto = "localhost"
                     porta_ponto = PONTOS_RECARGA[id_ponto]["porta"]
                     
                     try:

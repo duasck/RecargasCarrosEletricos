@@ -15,3 +15,10 @@ Primeiro MI de Concorrência e Conectividade
 #### 3 - Construa e inicie os containers
 - ``` docker-compose build```
 - ```docker-compose up -d --scale ponto=N --scale cliente=N```
+
+
+
+docker-compose -f docker/docker-compose.yml build
+
+
+docker-compose -f docker/docker-compose.yml up

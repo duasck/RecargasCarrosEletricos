@@ -1,0 +1,32 @@
+services:
+  nuvem:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: nuvem
+    command: ["python", "-m", "cloud.nuvem"]
+    network_mode: host
+    environment:
+      - NUM_PONTOS=5
+
+  ponto:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["python", "-m", "charging_points.ponto_recarga"]
+    network_mode: host
+    environment:
+      - BASE_PORT=6000
+    deploy:
+      replicas: 5
+
+  cliente:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["python", "-m", "clients.cliente"]
+    network_mode: host
+    depends_on:
+      - nuvem
+    deploy:
+      replicas: 3

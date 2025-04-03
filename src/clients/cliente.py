@@ -4,6 +4,8 @@ import json
 import os
 import random
 from random_info import listaClientes
+from .client_models import Cliente
+from shared.random_info import listaClientes
 
 # Configuração do logging
 logging.basicConfig(
@@ -11,9 +13,13 @@ logging.basicConfig(
     format="%(asctime)s [CLIENTE-%(client_id)s] %(message)s"
 )
 
-HOST = "nuvem"
+HOST = "localhost"
 PORT = 5000
 
+
+# Em nuvem.py, quando conectar aos pontos, altere:
+ip_ponto = PONTOS_RECARGA[id_ponto]["ip"]  # Para:
+ip_ponto = "localhost"
 class Cliente:
     def __init__(self, id_veiculo, bateria, localizacao):
         self.id_veiculo = id_veiculo
