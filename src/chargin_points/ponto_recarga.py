@@ -4,7 +4,6 @@ import json
 import os
 from random import uniform
 from .models import PontoRecarga
-from shared.utils import gera_coordenadas
 
 # Configuração do logging
 logging.basicConfig(
@@ -12,62 +11,36 @@ logging.basicConfig(
     format="%(asctime)s [%(container_id)s] %(message)s"
 )
 
-
 HOST = "0.0.0.0"
 BASE_PORT = int(os.getenv('BASE_PORT', 6000))
 
-# Obtém o ID do container a partir do hostname
-container_id = os.getenv('HOSTNAME', 'ponto_1').split('_') #pq só ponto1?
-PORT = BASE_PORT + int(container_id[0], 16)
+# Obtém o ID do container
+container_id = os.getenv('HOSTNAME', 'ponto_1').split('_')[-1]
+try:
+    PORT = BASE_PORT + int(container_id)
+except ValueError:
+    PORT = BASE_PORT + 1  # Fallback se não conseguir converter para número
 
-class PontoRecarga:
-    def __init__(self, id_ponto, localizacao):
-        self.id_ponto = id_ponto
-        self.localizacao = localizacao
-        self.status = "disponivel"
-        self.fila = []
-        self.veiculo_atual = None
-
-    def reservar(self, id_veiculo):
-        if self.status == "disponivel":
-            self.status = "reservado"
-            self.veiculo_atual = id_veiculo
-            return {
-                "status": "reservado",
-                "id_ponto": self.id_ponto,
-                "localizacao": self.localizacao
+class PontoRecargaService:
+    def __init__(self):
+        self.ponto = PontoRecarga(
+            id_ponto=f"P{container_id}",
+            localizacao={
+                "lat": -23.5505 + (int(container_id) * 0.01,
+                "lon": -46.6333 + (int(container_id) * 0.01
             }
-        else:
-            return {"status": "indisponivel"}
+        )
 
-    def iniciar_recarga(self, taxa_recarga):
-        if self.status == "reservado" and self.veiculo_atual:
-            self.status = "ocupado"
-            return {
-                "status": "recarga_iniciada",
-                "taxa_recarga": taxa_recarga,
-                "id_ponto": self.id_ponto
-            }
-        else:
-            return {"status": "indisponivel"}
+    def handle_request(self, mensagem):
+        if mensagem["acao"] == "reservar":
+            return self.ponto.reservar(mensagem["id_veiculo"])
+        elif mensagem["acao"] == "iniciar_recarga":
+            return self.ponto.iniciar_recarga(mensagem.get("taxa_recarga", 10.0))
+        elif mensagem["acao"] == "liberar":
+            return self.ponto.liberar()
+        return {"status": "acao_nao_reconhecida"}
 
-    def liberar(self):
-        if self.status in ["reservado", "ocupado"]:
-            self.status = "disponivel"
-            self.veiculo_atual = None
-            return {"status": "liberado"}
-        return {"status": "já_disponivel"}
-
-# Configuração do ponto de recarga
-ponto = PontoRecarga(
-    id_ponto=f"P{container_id}",
-    localizacao={
-        "lat": -23.5505 + (int(container_id) * 0.01),
-        "lon": -46.6333 + (int(container_id) * 0.01)
-    }
-)
-
-# Adiciona container_id a todos os logs
+# Configuração do logging com container_id
 old_factory = logging.getLogRecordFactory()
 def record_factory(*args, **kwargs):
     record = old_factory(*args, **kwargs)
@@ -75,12 +48,14 @@ def record_factory(*args, **kwargs):
     return record
 logging.setLogRecordFactory(record_factory)
 
+service = PontoRecargaService()
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen()
 
-logging.info(f"Servidor do Ponto de Recarga {ponto.id_ponto} rodando na porta {PORT}...")
-logging.info(f"Localização: {ponto.localizacao}")
+logging.info(f"Servidor do Ponto de Recarga {service.ponto.id_ponto} rodando na porta {PORT}...")
+logging.info(f"Localização: {service.ponto.localizacao}")
 
 while True:
     conn, addr = s.accept()
@@ -91,24 +66,11 @@ while True:
         if data:
             mensagem = json.loads(data.decode())
             logging.info(f"Mensagem recebida: {mensagem}")
-
-            if mensagem["acao"] == "reservar":
-                resposta = ponto.reservar(mensagem["id_veiculo"])
-                conn.sendall(json.dumps(resposta).encode())
-                logging.info(f"Reserva realizada: {resposta}")
-
-            elif mensagem["acao"] == "iniciar_recarga":
-                resposta = ponto.iniciar_recarga(mensagem.get("taxa_recarga", 10.0))
-                conn.sendall(json.dumps(resposta).encode())
-                logging.info(f"Recarga iniciada: {resposta}")
-
-            elif mensagem["acao"] == "liberar":
-                resposta = ponto.liberar()
-                conn.sendall(json.dumps(resposta).encode())
-                logging.info(f"Ponto liberado: {resposta}")
+            
+            resposta = service.handle_request(mensagem)
+            conn.sendall(json.dumps(resposta).encode())
+            logging.info(f"Resposta enviada: {resposta}")
 
     except Exception as e:
         logging.error(f"Erro ao processar requisição: {e}")
-    finally:
-        conn.close()
-        logging.info("Conexão encerrada.")
+        conn.sendall(json.dumps({"status": "

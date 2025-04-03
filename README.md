@@ -16,7 +16,7 @@ Primeiro MI de Concorrência e Conectividade
 - ``` docker-compose build```
 - ```docker-compose up -d --scale ponto=N --scale cliente=N```
 
-
+python src/shared/random_info.py
 
 docker-compose -f docker/docker-compose.yml build
 

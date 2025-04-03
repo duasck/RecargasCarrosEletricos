@@ -2,7 +2,6 @@ import random
 import os
 import json
 
-
 class Cliente:
     def __init__(self, id, coordenadas):
         self.id = id
@@ -14,7 +13,7 @@ class PontoRecarga:
         self.porta = porta
         self.coordenadas = coordenadas
 
-def geraCoordenadas():
+def gera_coordenadas():
     return (random.uniform(-23.56, -23.54), random.uniform(-46.66, -46.62))
 
 listaClientes = []
@@ -26,7 +25,7 @@ def gerar_clientes(n):
     for i in range(1, n + 1):
         cliente = Cliente(
             id=f"cliente_{i}",
-            coordenadas=geraCoordenadas()
+            coordenadas=gera_coordenadas()
         )
         listaClientes.append(cliente)
     print(f"{n} clientes gerados com sucesso!")
@@ -38,34 +37,36 @@ def gerar_pontos(n):
         ponto = PontoRecarga(
             id=f"P{i}",
             porta=6000 + i,
-            coordenadas=geraCoordenadas()
+            coordenadas=gera_coordenadas()
         )
         listaPontos.append(ponto)
     print(f"{n} pontos de recarga gerados com sucesso!")
 
 def salvar_dados():
-    try: 
-        with open('dados_clientes.json', 'w') as f:
-            json.dump([{'id': cliente.id, 'coordenadas': cliente.coordenadas} for cliente in listaClientes], f)
+    try:
+        with open('src/shared/dados_clientes.json', 'w') as f:
+            json.dump([{'id': c.id, 'coordenadas': c.coordenadas} 
+                      for c in listaClientes], f)
 
-        with open('dados_pontos.json', 'w') as f:
-            json.dump([{'id': ponto.id, 'porta': ponto.porta, 'coordenadas': ponto.coordenadas} for ponto in listaPontos], f)
+        with open('src/shared/dados_pontos.json', 'w') as f:
+            json.dump([{'id': p.id, 'porta': p.porta, 'coordenadas': p.coordenadas} 
+                      for p in listaPontos], f)
     except Exception as e:
         print(f"Não foi possível salvar os dados: {e}")
-        
+
 def carregar_dados():
     global listaClientes, listaPontos
     try:
-        with open('dados_clientes.json', 'r') as f:
-            dados = json.load(f)
-            listaClientes = [Cliente(cliente['id'], cliente['coordenadas']) for cliente in dados]
+        with open('src/shared/dados_clientes.json', 'r') as f:
+            listaClientes = [Cliente(c['id'], c['coordenadas']) 
+                           for c in json.load(f)]
     except FileNotFoundError:
         pass
         
     try:
-        with open('dados_pontos.json', 'r') as f:
-            dados = json.load(f)
-            listaPontos = [PontoRecarga(ponto['id'], ponto['porta'], ponto['coordenadas']) for ponto in dados]
+        with open('src/shared/dados_pontos.json', 'r') as f:
+            listaPontos = [PontoRecarga(p['id'], p['porta'], p['coordenadas']) 
+                          for p in json.load(f)]
     except FileNotFoundError:
         pass
 
@@ -93,11 +94,11 @@ Opções:
             gerar_pontos(n)
         elif opcao == "3":
             print("\nClientes:")
-            for cliente in listaClientes[:5]:  # Mostra apenas os 5 primeiros
+            for cliente in listaClientes[:5]:
                 print(f"  {cliente.id}: {cliente.coordenadas}")
             
             print("\nPontos de recarga:")
-            for ponto in listaPontos[:5]:  # Mostra apenas os 5 primeiros
+            for ponto in listaPontos[:5]:
                 print(f"  {ponto.id}: Porta {ponto.porta}, Local: {ponto.coordenadas}")
         elif opcao == "4":
             salvar_dados()
@@ -111,4 +112,3 @@ Opções:
 
 if __name__ == "__main__":
     menu()
-

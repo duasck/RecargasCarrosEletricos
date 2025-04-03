@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   nuvem:
     build:
@@ -8,6 +10,12 @@ services:
     network_mode: host
     environment:
       - NUM_PONTOS=5
+      - IN_DOCKER=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 5s
+      timeout: 30s
+      retries: 3
 
   ponto:
     build:
@@ -17,6 +25,7 @@ services:
     network_mode: host
     environment:
       - BASE_PORT=6000
+      - IN_DOCKER=true
     deploy:
       replicas: 5
 
@@ -26,7 +35,10 @@ services:
       dockerfile: docker/Dockerfile
     command: ["python", "-m", "clients.cliente"]
     network_mode: host
+    environment:
+      - IN_DOCKER=true
     depends_on:
-      - nuvem
+      nuvem:
+        condition: service_healthy
     deploy:
       replicas: 3
